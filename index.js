@@ -22,14 +22,22 @@ exports.ob_start = function (id) {
             fd: new StringStream()
         };
     }
-    console = new Console(writers[id].fd, process.stderr);
+    var fd = writers[id].fd;
+    process.__defineGetter__('stdout', function () {
+        return fd;
+    });
+    console = new Console(fd, process.stderr);
 };
 
 exports.ob_end = function (id) {
     if (!id) {
         id = cur;
     }
-    console = new Console(writers[id]._prev, process.stderr); //reset
+    var prev = writers[id]._prev;
+    console = new Console(prev, process.stderr); //reset
+    process.__defineGetter__('stdout', function () {
+        return prev;
+    });
     var fd = writers[id].fd;
     delete writers[id];
     return fd;
@@ -50,3 +58,5 @@ exports.catchOutput = function (fn) {
         fn(this.ob_end);
     }
 };
+
+exports.StringStream = StringStream;
